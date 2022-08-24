@@ -28,7 +28,7 @@ class BigQueryExtractor(BaseExtractor):
 
     @classmethod
     def get_operator_classnames(cls) -> List[str]:
-        return ['BigQueryOperator', 'BigQueryExecuteQueryOperator']
+        return ['BigQueryInsertJobOperator']
 
     def extract(self) -> Optional[TaskMetadata]:
         return None
@@ -66,7 +66,7 @@ class BigQueryExtractor(BaseExtractor):
 
         run_facets = stats.run_facets
         job_facets = {
-            "sql": SqlJobFacet(self.operator.sql)
+            "sql": SqlJobFacet(self.operator.configuration['query']['query'])
         }
 
         return TaskMetadata(
@@ -92,7 +92,6 @@ class BigQueryExtractor(BaseExtractor):
             if BigQueryHook is not None:
                 hook = BigQueryHook(
                     gcp_conn_id=self.operator.gcp_conn_id,
-                    use_legacy_sql=self.operator.use_legacy_sql,
                     delegate_to=self.operator.delegate_to,
                     location=self.operator.location,
                     impersonation_chain=self.operator.impersonation_chain,
@@ -105,7 +104,7 @@ class BigQueryExtractor(BaseExtractor):
 
     def _get_xcom_bigquery_job_id(self, task_instance):
         bigquery_job_id = task_instance.xcom_pull(
-            task_ids=task_instance.task_id, key='job_id')
+            task_ids=task_instance.task_id, key='return_value')
 
         log.debug(f"bigquery_job_id: {bigquery_job_id}")
         return bigquery_job_id
